@@ -15,7 +15,7 @@ typedef struct Node Node;
 // Defines a struct for a hashtable_item
 typedef struct hashtable_item {
     char *key;
-    char *value;
+    void *value;
 } hashtable_item;
 
 // Defines a struct for a hashtable

@@ -13,7 +13,7 @@
 #define MAX_KVP 1024
 
 void startWebserver();
-void parseJSON();
+hashtable* parseJSON();
 
 int main() {
     startWebserver();
@@ -137,7 +137,7 @@ void startWebserver() {
             }
 
             // Parse the JSON data
-            parseJSON(jsonData);
+            print_table(parseJSON(jsonData));
         }
 
         const int valwrite = write(newSocketFeed, resp, strlen(resp));
@@ -150,8 +150,8 @@ void startWebserver() {
     }
 }
 
-void parseJSON(const char *jsonString) {
-    char *kvpArray[MAX_KVP];
+hashtable* parseJSON(const char *jsonString) {
+    void *kvpArray[MAX_KVP];
     int index = 0;
     int start = 1;
     int count = 0;
@@ -159,7 +159,7 @@ void parseJSON(const char *jsonString) {
     // Checks if JSON string starts with {
     if (jsonString[index] != '{') {
         printf("Invalid JSON input\n");
-        return;
+        return NULL;
     }
 
     // Skip the opening '{'
@@ -167,12 +167,24 @@ void parseJSON(const char *jsonString) {
 
     // Iterate over the entire JSON string
     while (jsonString[index] != '}' && count < MAX_KVP) {
+        if (jsonString[index] == '{') {
+            const int innerJsonStartIndex = index;
+            while (jsonString[index] != '}') {
+                index++;
+            }
+            const int innerJsonEndIndex = index;
+            // Copy the string from innerJsonStartIndex to innerJsonEndIndex into kvp
+            char *innerJson = strndup(jsonString + innerJsonStartIndex, innerJsonEndIndex - innerJsonStartIndex + 1);
+            kvpArray[count] = parseJSON(innerJson);
+            free(innerJson);
+        }
         const char character = jsonString[index];
         // If character is comma, then copy the string from start to index into kvp
         if (character == ',') {
             // Copy the string from start to index into kvp
             char *kvp = strndup(jsonString + start, index - start);
             kvpArray[count] = kvp;
+            free(kvp);
             start = index + 1;
             count++;
         }
@@ -182,11 +194,12 @@ void parseJSON(const char *jsonString) {
     // Checks for the closing '}'
     if (jsonString[index] != '}') {
         printf("Invalid JSON input\n");
-        return;
+        return NULL;
     }
     // Copy the string from start to index into kvp
     char *kvp = strndup(jsonString + start, index - start);
     kvpArray[count] = kvp;
+    free(kvp);
 
     hashtable *table = create_table();
 
@@ -196,7 +209,7 @@ void parseJSON(const char *jsonString) {
         const char *colon = strchr(kvpArray[i], ':');
         if (colon != NULL) {
             // Copies the string from kvpArray[i] to colon - kvpArray[i] into key
-            const char *key = strndup(kvpArray[i], colon - kvpArray[i]);
+            char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
             // Copies the string from colon + 1 to the length of kvpArray[i] - the length of key - 1 into value
             char *value = strndup(colon + 1, strlen(kvpArray[i]) - strlen(key) - 1);
             // Remove the double quotes from value, if there are any
@@ -204,9 +217,13 @@ void parseJSON(const char *jsonString) {
                 value++;
                 value[strlen(value) - 1] = '\0';
             }
-            // Insert the key-value pair into the hashtable
-            hashtable_insert(table, key, value);
+            if (key != NULL) {
+                hashtable_insert(table, key, value);
+            }
+            free(key);
+            free(value);
         }
     }
     print_table(table);
+    return table;
 }
