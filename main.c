@@ -137,7 +137,7 @@ void startWebserver() {
             }
 
             // Parse the JSON data
-            print_table(parseJSON(jsonData));
+            parseJSON(jsonData);
         }
 
         const int valwrite = write(newSocketFeed, resp, strlen(resp));
@@ -175,7 +175,7 @@ hashtable* parseJSON(const char *jsonString) {
             const int innerJsonEndIndex = index;
             // Copy the string from innerJsonStartIndex to innerJsonEndIndex into kvp
             char *innerJson = strndup(jsonString + innerJsonStartIndex, innerJsonEndIndex - innerJsonStartIndex + 1);
-            kvpArray[count] = parseJSON(innerJson);
+            kvpArray[count] = (void*)parseJSON(innerJson);
             free(innerJson);
         }
         const char character = jsonString[index];
@@ -184,7 +184,6 @@ hashtable* parseJSON(const char *jsonString) {
             // Copy the string from start to index into kvp
             char *kvp = strndup(jsonString + start, index - start);
             kvpArray[count] = kvp;
-            free(kvp);
             start = index + 1;
             count++;
         }
@@ -199,7 +198,6 @@ hashtable* parseJSON(const char *jsonString) {
     // Copy the string from start to index into kvp
     char *kvp = strndup(jsonString + start, index - start);
     kvpArray[count] = kvp;
-    free(kvp);
 
     hashtable *table = create_table();
 
@@ -209,7 +207,7 @@ hashtable* parseJSON(const char *jsonString) {
         const char *colon = strchr(kvpArray[i], ':');
         if (colon != NULL) {
             // Copies the string from kvpArray[i] to colon - kvpArray[i] into key
-            char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
+            const char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
             // Copies the string from colon + 1 to the length of kvpArray[i] - the length of key - 1 into value
             char *value = strndup(colon + 1, strlen(kvpArray[i]) - strlen(key) - 1);
             // Remove the double quotes from value, if there are any
@@ -220,8 +218,6 @@ hashtable* parseJSON(const char *jsonString) {
             if (key != NULL) {
                 hashtable_insert(table, key, value);
             }
-            free(key);
-            free(value);
         }
     }
     print_table(table);

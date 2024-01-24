@@ -63,7 +63,7 @@ hashtable* create_table() {
     return table;
 }
 
-hashtable_item* create_item(const char *key, const char *value) {
+hashtable_item* create_item(const char *key, void *value) {
     // The hashtable size is 16 bytes (on the current machine),
     // BUT the key and value are pointers so the ACTUAL value pointed too might be MUCH larger
 
@@ -71,21 +71,24 @@ hashtable_item* create_item(const char *key, const char *value) {
     hashtable_item *item = (hashtable_item *) malloc(sizeof(hashtable_item));
 
     if (item == NULL) {
-        printf("Error creating hashtable item\n");
+        printf("Failed to allocate memory for hashtable item\n");
         return NULL;
     }
 
     item->key = (char *) malloc(strlen(key) + 1);
-    item->value = (char *) malloc(strlen(value) + 1);
-
     strcpy(item->key, key);
-    strcpy(item->value, value);
+    item->value = value;
+
     return item;
 }
 
 void free_item(hashtable_item *item) {
     // Frees the item
     free(item->key);
+    // Check if value is a hashtable and free it
+    if (is_hashtable(item->value)) {
+        free_table((hashtable*)item->value);
+    }
     free(item->value);
     free(item);
 }
@@ -144,7 +147,7 @@ void insert_into_table(hashtable *table, hashtable_item *item) {
     }
 }
 
-void hashtable_insert(hashtable *table, const char *key, const char *value) {
+void hashtable_insert(hashtable *table, const char *key, void *value) {
     hashtable_item *item = create_item(key, value);
     hashtable_insert_with_item(table, item);
 
@@ -245,7 +248,7 @@ void print_table(const hashtable *table) {
     printf("=====================================\n");
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
-            printf("INDEX: %d, KEY: %s, VALUE: %s\n", i, table->items[i]->key, table->items[i]->value);
+            printf("INDEX: %d, KEY: %s, VALUE: %s\n", i, table->items[i]->key, (char*)table->items[i]->value);
         }
     }
     printf("=====================================\n");

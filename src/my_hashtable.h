@@ -28,7 +28,7 @@ typedef struct hashtable {
 
 unsigned long hash_function(const char *str);
 hashtable* create_table();
-hashtable_item* create_item(const char *key, const char *value);
+hashtable_item* create_item(const char *key, void *value);
 void free_item(hashtable_item *item);
 void free_table(hashtable *table);
 void handle_collisions(const hashtable *table, unsigned long index, hashtable_item *item);
