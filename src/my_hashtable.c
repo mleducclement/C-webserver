@@ -63,21 +63,21 @@ hashtable* create_table() {
     return table;
 }
 
-hashtable_item* create_item(const char *key, void *value) {
+hashtable_item* create_item(const char *key, void *value, enum ValueType type) {
     // The hashtable size is 16 bytes (on the current machine),
-    // BUT the key and value are pointers so the ACTUAL value pointed too might be MUCH larger
+    // BUT the key and value are pointers so the ACTUAL value pointed to can be MUCH larger
 
     // Creates a pointer to a hashtable_item
-    hashtable_item *item = (hashtable_item *) malloc(sizeof(hashtable_item));
+    hashtable_item *item = malloc(sizeof(hashtable_item));
 
     if (item == NULL) {
-        printf("Failed to allocate memory for hashtable item\n");
+        printf("Error creating hashtable item\n");
         return NULL;
     }
 
-    item->key = (char *) malloc(strlen(key) + 1);
-    strcpy(item->key, key);
+    item->key = strdup(key);
     item->value = value;
+    item->type = type;
 
     return item;
 }
@@ -85,10 +85,6 @@ hashtable_item* create_item(const char *key, void *value) {
 void free_item(hashtable_item *item) {
     // Frees the item
     free(item->key);
-    // Check if value is a hashtable and free it
-    if (is_hashtable(item->value)) {
-        free_table((hashtable*)item->value);
-    }
     free(item->value);
     free(item);
 }
@@ -147,8 +143,8 @@ void insert_into_table(hashtable *table, hashtable_item *item) {
     }
 }
 
-void hashtable_insert(hashtable *table, const char *key, void *value) {
-    hashtable_item *item = create_item(key, value);
+void hashtable_insert(hashtable *table, const char *key, void *value, enum ValueType type) {
+    hashtable_item *item = create_item(key, value, type);
     hashtable_insert_with_item(table, item);
 
     if (table->count == table->size) {
@@ -189,7 +185,7 @@ void hashtable_delete(hashtable *table, const char *key) {
             Node *node = head;
             head = head->next;
             node->next = NULL;
-            table->items[index] = create_item(node->item->key, node->item->value);
+            table->items[index] = create_item(node->item->key, node->item->value, node->item->type);
             free_list(node);
             table->overflow_buckets[index] = head;
             return;
@@ -248,14 +244,39 @@ void print_table(const hashtable *table) {
     printf("=====================================\n");
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
-            printf("INDEX: %d, KEY: %s, VALUE: %s\n", i, table->items[i]->key, (char*)table->items[i]->value);
+            print_value(i, table->items[i]);
         }
     }
     printf("=====================================\n");
 }
 
+void print_value(const int index, const hashtable_item *item) {
+    printf("INDEX: %d, KEY: %s, VALUE: ", index, item->key);
+    switch (item->type) {
+        case STRING:
+            printf("%s\n", (char*)item->value);
+        break;
+        case INT:
+            printf("%d\n", *(int*)item->value);
+        break;
+        case FLOAT:
+            printf("%f\n", *(float*)item->value);
+        break;
+        case BOOL:
+            printf("Index: %d, Key: %s, Value: %s\n", index, item->key, *(bool*)item->value ? "true" : "false");
+        break;
+        case HASHTABLE:
+            print_table(item->value);
+        break;
+        case default:
+            stderr("Invalid type\n");
+        break;
+    }
+    printf("\n");
+}
+
 void print_search(const hashtable *table, const char *key) {
-    char *result = hashtable_search(table, key);
+    void *result = hashtable_search(table, key);
 
     if (result == NULL) {
         printf("Key: %s does not exist\n", key);

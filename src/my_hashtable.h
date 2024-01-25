@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "my_linkedlist.h"
 
 #define CAPACITY 50000 // size of hashtable
@@ -16,6 +17,7 @@ typedef struct Node Node;
 typedef struct hashtable_item {
     char *key;
     void *value;
+    enum ValueType { INT, FLOAT, BOOL, STRING, HASHTABLE } type;
 } hashtable_item;
 
 // Defines a struct for a hashtable
@@ -28,7 +30,7 @@ typedef struct hashtable {
 
 unsigned long hash_function(const char *str);
 hashtable* create_table();
-hashtable_item* create_item(const char *key, void *value);
+hashtable_item* create_item(const char *key, const char *value, enum ValueType type);
 void free_item(hashtable_item *item);
 void free_table(hashtable *table);
 void handle_collisions(const hashtable *table, unsigned long index, hashtable_item *item);
@@ -37,6 +39,7 @@ void hashtable_insert_with_item(hashtable *table, hashtable_item *item);
 void hashtable_delete(hashtable *table, const char *key);
 char* hashtable_search(const hashtable *table, const char *key);
 void print_table(const hashtable *table);
+void print_value(int index, const hashtable_item *item);
 void print_search(const hashtable *table, const char *key);
 
 #endif //WEBSERVER_MY_HASHTABLE_H
