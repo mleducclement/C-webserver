@@ -6,4 +6,7 @@ set(CMAKE_C_STANDARD 11)
 add_executable(webserver main.c
         src/my_linkedlist.c
         main.c
-        src/my_hashtable.c)
+        src/my_hashtable.c
+        src/constants.h
+        src/toolbox.c
+        src/toolbox.h)

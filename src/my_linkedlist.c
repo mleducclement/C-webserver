@@ -79,11 +79,34 @@ void print_list(const Node* head) {
 
     const Node* current = head;
     while (current != NULL) {
-        printf("NODE ADDRESS %p | NODE KEY: %s, NODE VALUE: %s\n", current, current->item->key, current->item->value);
-        if (current->next != NULL) {
-            printf("NEXT NODE ADDRESS: %p\n", current->next);
-        }
         current = current->next;
+    }
+}
+
+void print_node(const Node* node) {
+    printf("NODE ADDRESS %p | NODE KEY: %s | NODE VALUE: ", node, node->item->key);
+    switch (node->item->type) {
+        case STRING:
+            printf("%s\n", (char*)node->item->value);
+            break;
+        case INT:
+            printf("%d\n", *(int*)node->item->value);
+            break;
+        case FLOAT:
+            printf("%f\n", *(double*)node->item->value);
+            break;
+        case BOOL:
+            printf("%s\n", *(bool*)node->item->value ? "true" : "false");
+            break;
+        case NULL_TYPE:
+            printf("(NULL)\n");
+            break;
+        default:
+            printf("ERROR : Invalid type\n");
+            break;
+    }
+    if (node->next != NULL) {
+        printf("NEXT NODE ADDRESS: %p\n", node->next);
     }
 }
 

@@ -63,7 +63,7 @@ hashtable* create_table() {
     return table;
 }
 
-hashtable_item* create_item(const char *key, void *value, enum ValueType type) {
+hashtable_item* create_item(const char *key, void *value, const ValueType type) {
     // The hashtable size is 16 bytes (on the current machine),
     // BUT the key and value are pointers so the ACTUAL value pointed to can be MUCH larger
 
@@ -143,8 +143,23 @@ void insert_into_table(hashtable *table, hashtable_item *item) {
     }
 }
 
-void hashtable_insert(hashtable *table, const char *key, void *value, enum ValueType type) {
-    hashtable_item *item = create_item(key, value, type);
+void hashtable_insert(hashtable *table, const char *key, void *value, const ValueType type) {
+    void *value_to_insert = value;
+
+    // If the value is a int, alloc memory for it and store the pointer
+    if (type == INT) {
+        int *value_ptr = malloc(sizeof(int));
+
+        if (value_ptr == NULL) {
+            printf("Error allocating memory for value\n");
+            return;
+        }
+
+        *value_ptr = *(int*)value;
+        value_to_insert = value_ptr;
+    }
+
+    hashtable_item *item = create_item(key, value_to_insert, type);
     hashtable_insert_with_item(table, item);
 
     if (table->count == table->size) {
@@ -214,28 +229,31 @@ void hashtable_delete(hashtable *table, const char *key) {
         }
     }
 }
-
-char* hashtable_search(const hashtable *table, const char *key) {
+hashtable_item* hashtable_search(const hashtable *table, const char *key) {
     const int index = hash_function(key);
-    const hashtable_item *item = table->items[index];
+    hashtable_item *item = table->items[index];
     const Node *head = table->overflow_buckets[index];
 
     // Checks the hashtable for the item
     if (item != NULL && strcmp(item->key, key) == 0) {
-            if (item->value == NULL) {
-                return "(NULL)";
-            }
-            return item->value;
+            return item;
     }
     // If not found in the hastable, check the overflow bucket
     const Node *current = head;
     while (current != NULL) {
         if (strcmp(current->item->key, key) == 0) {
-            return current->item->value;
+            return current->item;
         }
         current = current->next;
     }
     return NULL;
+}
+
+void print_search(const hashtable *table, const char *key) {
+    const hashtable_item *result = hashtable_search(table, key);
+    result == NULL ? printf("Key: %s does not exist\n", key) :
+        result->value == NULL ? printf("Key: %s exists but has no value\n", key) :
+        print_value(result);
 }
 
 void print_table(const hashtable *table) {
@@ -244,44 +262,33 @@ void print_table(const hashtable *table) {
     printf("=====================================\n");
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
-            print_value(i, table->items[i]);
+            print_value(table->items[i]);
         }
     }
     printf("=====================================\n");
 }
 
-void print_value(const int index, const hashtable_item *item) {
-    printf("INDEX: %d, KEY: %s, VALUE: ", index, item->key);
+void print_value(const hashtable_item *item) {
+    printf(" KEY: %s, VALUE: ", item->key);
     switch (item->type) {
         case STRING:
-            printf("%s\n", (char*)item->value);
+            printf("%s", (char*)item->value);
         break;
         case INT:
-            printf("%d\n", *(int*)item->value);
+            printf("%d", *(int*)item->value);
         break;
         case FLOAT:
-            printf("%f\n", *(float*)item->value);
+            printf("%f", *(float*)item->value);
         break;
         case BOOL:
-            printf("Index: %d, Key: %s, Value: %s\n", index, item->key, *(bool*)item->value ? "true" : "false");
+            printf("%s", *(bool*)item->value ? "true" : "false");
         break;
         case HASHTABLE:
             print_table(item->value);
         break;
-        case default:
-            stderr("Invalid type\n");
+        default:
+            printf("Invalid type\n");
         break;
     }
     printf("\n");
-}
-
-void print_search(const hashtable *table, const char *key) {
-    void *result = hashtable_search(table, key);
-
-    if (result == NULL) {
-        printf("Key: %s does not exist\n", key);
-    }
-    else {
-        printf("Key: %s, Value: %s\n", key, result);
-    }
 }

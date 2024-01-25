@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "src/my_hashtable.h"
+#include "src/constants.h"
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
@@ -14,6 +15,7 @@
 
 void startWebserver();
 hashtable* parseJSON();
+int getValueType(const char* value);
 
 int main() {
     startWebserver();
@@ -151,19 +153,17 @@ void startWebserver() {
 }
 
 hashtable* parseJSON(const char *jsonString) {
+    printf("%s", jsonString);
     void *kvpArray[MAX_KVP];
-    int index = 0;
+    int index = 1;
     int start = 1;
     int count = 0;
 
     // Checks if JSON string starts with {
-    if (jsonString[index] != '{') {
-        printf("Invalid JSON input\n");
+    if (jsonString[0] != '{' || jsonString[strlen(jsonString) - 1] != '}') {
+        printf("Malformed JSON input\n");
         return NULL;
     }
-
-    // Skip the opening '{'
-    index++;
 
     // Iterate over the entire JSON string
     while (jsonString[index] != '}' && count < MAX_KVP) {
@@ -190,14 +190,10 @@ hashtable* parseJSON(const char *jsonString) {
         index++;
     }
 
-    // Checks for the closing '}'
-    if (jsonString[index] != '}') {
-        printf("Invalid JSON input\n");
-        return NULL;
-    }
     // Copy the string from start to index into kvp
     char *kvp = strndup(jsonString + start, index - start);
     kvpArray[count] = kvp;
+    free(kvp);
 
     hashtable *table = create_table();
 
@@ -210,16 +206,22 @@ hashtable* parseJSON(const char *jsonString) {
             const char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
             // Copies the string from colon + 1 to the length of kvpArray[i] - the length of key - 1 into value
             char *value = strndup(colon + 1, strlen(kvpArray[i]) - strlen(key) - 1);
+            // Checks the type of value
+            const ValueType type = getValueType(value);
             // Remove the double quotes from value, if there are any
-            if (value[0] == '"') {
-                value++;
-                value[strlen(value) - 1] = '\0';
+            if (type == STRING) {
+                if (value[0] == '"') {
+                    char* newValue = strndup(value + 1, strlen(value) - 2);
+                    free(value);
+                    value = newValue;
+                }
             }
             if (key != NULL) {
-                hashtable_insert(table, key, value);
+                hashtable_insert(table, key, value, type);
             }
         }
     }
     print_table(table);
     return table;
 }
+

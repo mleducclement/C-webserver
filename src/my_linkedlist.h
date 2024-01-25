@@ -2,8 +2,9 @@
 #ifndef MY_LINKEDLIST_H
 #define MY_LINKEDLIST_H
 
-#include "my_hashtable.h"
 #include <stdlib.h>
+#include "my_hashtable.h"
+#include "constants.h"
 
 // Forward declaration of hashtable_item
 typedef struct hashtable_item hashtable_item;
