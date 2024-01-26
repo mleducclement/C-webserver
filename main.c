@@ -139,7 +139,9 @@ void startWebserver() {
             }
 
             // Parse the JSON data
-            parseJSON(jsonData);
+            hashtable* table = parseJSON(jsonData);
+            print_table(table);
+            free_table(table);
         }
 
         const int valwrite = write(newSocketFeed, resp, strlen(resp));
@@ -147,13 +149,12 @@ void startWebserver() {
             perror("webserver (write)");
             continue;
         }
-
         close(newSocketFeed);
     }
 }
 
 hashtable* parseJSON(const char *jsonString) {
-    printf("%s", jsonString);
+    printf("%s\n", jsonString);
     void *kvpArray[MAX_KVP];
     int index = 1;
     int start = 1;
@@ -175,8 +176,7 @@ hashtable* parseJSON(const char *jsonString) {
             const int innerJsonEndIndex = index;
             // Copy the string from innerJsonStartIndex to innerJsonEndIndex into kvp
             char *innerJson = strndup(jsonString + innerJsonStartIndex, innerJsonEndIndex - innerJsonStartIndex + 1);
-            kvpArray[count] = (void*)parseJSON(innerJson);
-            free(innerJson);
+            kvpArray[count] = innerJson;
         }
         const char character = jsonString[index];
         // If character is comma, then copy the string from start to index into kvp
@@ -193,35 +193,38 @@ hashtable* parseJSON(const char *jsonString) {
     // Copy the string from start to index into kvp
     char *kvp = strndup(jsonString + start, index - start);
     kvpArray[count] = kvp;
-    free(kvp);
 
     hashtable *table = create_table();
 
     // Iterate over the kvpArray
-    for (int i = 0; i < count + 1; i++) {
+    for (int i = 0; i <= count; i++) {
         // Finds the string index of the first occurrence of ':'
+        // colon is not alloc new memory it points to the first occurence of the ':' in the string
         const char *colon = strchr(kvpArray[i], ':');
         if (colon != NULL) {
             // Copies the string from kvpArray[i] to colon - kvpArray[i] into key
-            const char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
-            // Copies the string from colon + 1 to the length of kvpArray[i] - the length of key - 1 into value
-            char *value = strndup(colon + 1, strlen(kvpArray[i]) - strlen(key) - 1);
-            // Checks the type of value
-            const ValueType type = getValueType(value);
-            // Remove the double quotes from value, if there are any
+            char *key = strndup(kvpArray[i], colon - (char*)kvpArray[i]);
+            void *value;
+            const ValueType type = getValueType(colon + 1);   // Determine type directly from JSON
+
             if (type == STRING) {
-                if (value[0] == '"') {
-                    char* newValue = strndup(value + 1, strlen(value) - 2);
-                    free(value);
-                    value = newValue;
-                }
+                // Extract and clean string value
+                value = strndup(colon + 2, strlen(kvpArray[i]) - strlen(key) - 3);
             }
+            else if (type == HASHTABLE) {
+                // Parse nested JSON to create hashtable
+                value = parseJSON(colon + 1);
+            } else {
+                // Handle other types (INT, FLOAT, BOOL)
+                value = strndup(colon + 1, strlen(kvpArray[i]) - strlen(key) - 1);
+            }
+
             if (key != NULL) {
                 hashtable_insert(table, key, value, type);
             }
+            free(key);    // Free the key string after it's used
         }
+        free(kvpArray[i]);
     }
-    print_table(table);
     return table;
 }
-

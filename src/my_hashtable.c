@@ -46,28 +46,24 @@ hashtable* create_table() {
 
     table->size = CAPACITY;
     table->count = 0;
-
-    // calloc is contiguous memory allocation
-    table->items = (hashtable_item **) calloc(table->size, sizeof(hashtable_item *));
+    table->items = calloc(table->size, sizeof(hashtable_item *));
 
     if (table->items == NULL) {
         printf("Error creating hashtable items\n");
+        free(table);
         return NULL;
     }
 
-    for (int i = 0; i < table->size; i++) {
-        table->items[i] = NULL;
-    }
-
     table->overflow_buckets = create_overflow_buckets(table);
+    if (table->overflow_buckets == NULL) {
+        free(table->items);
+        free(table);
+        return NULL;
+    }
     return table;
 }
 
 hashtable_item* create_item(const char *key, void *value, const ValueType type) {
-    // The hashtable size is 16 bytes (on the current machine),
-    // BUT the key and value are pointers so the ACTUAL value pointed to can be MUCH larger
-
-    // Creates a pointer to a hashtable_item
     hashtable_item *item = malloc(sizeof(hashtable_item));
 
     if (item == NULL) {
@@ -78,23 +74,22 @@ hashtable_item* create_item(const char *key, void *value, const ValueType type) 
     item->key = strdup(key);
     item->value = value;
     item->type = type;
-
     return item;
 }
 
 void free_item(hashtable_item *item) {
-    // Frees the item
     free(item->key);
-    free(item->value);
+
+    if (item->value != NULL) {
+        item->type == HASHTABLE ? free_table(item->value) : free(item->value);
+    }
     free(item);
 }
 
 void free_table(hashtable *table) {
-    // Frees the table
     for (int i = 0; i < table->size; i++) {
-        hashtable_item *item = table->items[i];
-        if (item != NULL) {
-            free_item(item);
+        if (table->items[i] != NULL) {
+            free_item(table->items[i]);
         }
     }
     free_overflow_buckets(table);
@@ -106,41 +101,12 @@ void handle_collisions(const hashtable *table, const unsigned long index, hashta
     Node *head = table->overflow_buckets[index];
 
     if (head == NULL) {
-        // Creates the list
         head = create_node();
         head->item = item;
         table->overflow_buckets[index] = head;
         return;
     }
-    // Insert to the list
-    table->overflow_buckets[index] = insert_node(head, item);
-}
-
-void insert_into_table(hashtable *table, hashtable_item *item) {
-    const int index = hash_function(item->key);
-
-    const hashtable_item *current_item = table->items[index];
-
-    if (current_item == NULL) {
-        // KEY does not exist
-        if (table->count == table->size) {
-            printf("Insert error: Hash table is full\n");
-            return;
-        }
-
-        // Insert directly
-        table->items[index] = item;
-        table->count++;
-    }
-    else {
-        // Update value if *key already exists
-        if (strcmp(current_item->key, item->key) == 0) {
-            strcpy(table->items[index]->value, item->value);
-        }
-        else {
-            handle_collisions(table, index, item);
-        }
-    }
+    insert_node(head, item);
 }
 
 void hashtable_insert(hashtable *table, const char *key, void *value, const ValueType type) {
@@ -154,21 +120,41 @@ void hashtable_insert(hashtable *table, const char *key, void *value, const Valu
             printf("Error allocating memory for value\n");
             return;
         }
-
-        *value_ptr = *(int*)value;
+        *value_ptr = atoi(value);
         value_to_insert = value_ptr;
     }
-
     hashtable_item *item = create_item(key, value_to_insert, type);
-    hashtable_insert_with_item(table, item);
 
-    if (table->count == table->size) {
-        free_item(item);
+    if (item == NULL) {
+        printf("Error creating item\n");
+        return;
     }
+
+    if (table->count >= table->size) {
+        free_item(item);
+        printf("Insert error: Hash table is full\n");
+        return;
+    }
+
+    insert_into_table(table, item);
 }
 
-void hashtable_insert_with_item(hashtable *table, hashtable_item *item) {
-    insert_into_table(table, item);
+void insert_into_table(hashtable *table, hashtable_item *item) {
+    const int index = hash_function(item->key);
+    const hashtable_item *current_item = table->items[index];
+
+    if (current_item == NULL) {
+        table->items[index] = item;
+        table->count++;
+    } else {
+        if (strcmp(current_item->key, item->key) == 0) {
+            free_item(table->items[index]);
+            table->items[index] = item;
+        }
+        else {
+            handle_collisions(table, index, item);
+        }
+    }
 }
 
 void hashtable_delete(hashtable *table, const char *key) {
@@ -201,6 +187,7 @@ void hashtable_delete(hashtable *table, const char *key) {
             head = head->next;
             node->next = NULL;
             table->items[index] = create_item(node->item->key, node->item->value, node->item->type);
+            table->count++;
             free_list(node);
             table->overflow_buckets[index] = head;
             return;
@@ -257,9 +244,8 @@ void print_search(const hashtable *table, const char *key) {
 }
 
 void print_table(const hashtable *table) {
-
-    printf("\nHASH TABLE\n");
     printf("=====================================\n");
+    printf("HASHTABLE CONTENTS\n");
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
             print_value(table->items[i]);
@@ -284,6 +270,7 @@ void print_value(const hashtable_item *item) {
             printf("%s", *(bool*)item->value ? "true" : "false");
         break;
         case HASHTABLE:
+            printf("NESTED \n");
             print_table(item->value);
         break;
         default:

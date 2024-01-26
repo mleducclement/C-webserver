@@ -14,8 +14,6 @@
 // Forward declaration of Node
 typedef struct Node Node;
 
-
-
 // Defines a struct for a hashtable_item
 typedef struct hashtable_item {
     char *key;
@@ -38,7 +36,7 @@ void free_item(hashtable_item *item);
 void free_table(hashtable *table);
 void handle_collisions(const hashtable *table, unsigned long index, hashtable_item *item);
 void hashtable_insert(hashtable *table, const char *key, void *value, ValueType type);
-void hashtable_insert_with_item(hashtable *table, hashtable_item *item);
+void insert_into_table(hashtable *table, hashtable_item *item);
 void hashtable_delete(hashtable *table, const char *key);
 hashtable_item* hashtable_search(const hashtable *table, const char *key);
 void print_table(const hashtable *table);
