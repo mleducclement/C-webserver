@@ -3,11 +3,11 @@
 
 Node* create_node() {
     Node *node = malloc(sizeof(Node));
+
     if (node == NULL) {
         printf("Failed to allocate memory for node\n");
         return NULL;
     }
-
     node->item = NULL;
     node->next = NULL;
     return node;
@@ -22,6 +22,7 @@ Node* insert_node(Node *head, hashtable_item *item) {
     }
 
     Node* current = head;
+
     while (current->next != NULL) {
         current = current->next;
     }
@@ -33,7 +34,6 @@ hashtable_item* remove_node(Node** head, const hashtable_item *item) {
     if (*head == NULL) {
         return NULL;
     }
-
     Node* current = *head;
     Node* previous = NULL;
 
@@ -78,6 +78,7 @@ void print_list(const Node* head) {
     }
 
     const Node* current = head;
+
     while (current != NULL) {
         current = current->next;
     }
@@ -85,6 +86,7 @@ void print_list(const Node* head) {
 
 void print_node(const Node* node) {
     printf("NODE ADDRESS %p | NODE KEY: %s | NODE VALUE: ", node, node->item->key);
+
     switch (node->item->type) {
         case STRING:
             printf("%s\n", (char*)node->item->value);
@@ -105,6 +107,7 @@ void print_node(const Node* node) {
             printf("ERROR : Invalid type\n");
             break;
     }
+
     if (node->next != NULL) {
         printf("NEXT NODE ADDRESS: %p\n", node->next);
     }
@@ -114,7 +117,6 @@ void free_list(Node *head) {
     if (head == NULL) {
         return;
     }
-
     Node *current = head;
     Node *next = NULL;
 

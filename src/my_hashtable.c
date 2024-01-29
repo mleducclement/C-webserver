@@ -114,14 +114,25 @@ void hashtable_insert(hashtable *table, const char *key, void *value, const Valu
 
     // If the value is a int, alloc memory for it and store the pointer
     if (type == INT) {
-        int *value_ptr = malloc(sizeof(int));
-
-        if (value_ptr == NULL) {
+        int *int_ptr = malloc(sizeof(int));
+        if (int_ptr == NULL) {
             printf("Error allocating memory for value\n");
             return;
         }
-        *value_ptr = atoi(value);
-        value_to_insert = value_ptr;
+        // atoi() converts a string to an int
+        *int_ptr = atoi(value);
+        value_to_insert = int_ptr;
+    }
+
+    // If the value is a bool, alloc memory for it and store the pointer
+    if (type == BOOL) {
+        bool *bool_ptr = malloc(sizeof(bool));
+        if (bool_ptr == NULL) {
+            printf("Error allocating memory for value\n");
+            return;
+        }
+        *bool_ptr = strcmp(value, "true") == 0 ? true : false;
+        value_to_insert = bool_ptr;
     }
     hashtable_item *item = create_item(key, value_to_insert, type);
 
@@ -135,7 +146,6 @@ void hashtable_insert(hashtable *table, const char *key, void *value, const Valu
         printf("Insert error: Hash table is full\n");
         return;
     }
-
     insert_into_table(table, item);
 }
 
@@ -192,7 +202,6 @@ void hashtable_delete(hashtable *table, const char *key) {
             table->overflow_buckets[index] = head;
             return;
         }
-
         Node *current = head;
         Node *previous = NULL;
 
@@ -227,6 +236,7 @@ hashtable_item* hashtable_search(const hashtable *table, const char *key) {
     }
     // If not found in the hastable, check the overflow bucket
     const Node *current = head;
+
     while (current != NULL) {
         if (strcmp(current->item->key, key) == 0) {
             return current->item;
@@ -246,6 +256,7 @@ void print_search(const hashtable *table, const char *key) {
 void print_table(const hashtable *table) {
     printf("=====================================\n");
     printf("HASHTABLE CONTENTS\n");
+
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
             print_value(table->items[i]);
@@ -256,26 +267,26 @@ void print_table(const hashtable *table) {
 
 void print_value(const hashtable_item *item) {
     printf(" KEY: %s, VALUE: ", item->key);
+
     switch (item->type) {
         case STRING:
             printf("%s", (char*)item->value);
-        break;
+            break;
         case INT:
             printf("%d", *(int*)item->value);
-        break;
+            break;
         case FLOAT:
             printf("%f", *(float*)item->value);
-        break;
+            break;
         case BOOL:
             printf("%s", *(bool*)item->value ? "true" : "false");
-        break;
+            break;
         case HASHTABLE:
             printf("NESTED \n");
             print_table(item->value);
-        break;
+            break;
         default:
             printf("Invalid type\n");
-        break;
     }
     printf("\n");
 }

@@ -9,4 +9,6 @@ add_executable(webserver main.c
         src/my_hashtable.c
         src/constants.h
         src/toolbox.c
-        src/toolbox.h)
+        src/toolbox.h
+        src/network.c
+        src/network.h)
