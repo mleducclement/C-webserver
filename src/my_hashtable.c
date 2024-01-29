@@ -124,6 +124,19 @@ void hashtable_insert(hashtable *table, const char *key, void *value, const Valu
         value_to_insert = int_ptr;
     }
 
+    // TODO : doesn't work for some reason, getting 0.000000 in hashtable
+    // If the value is a int, alloc memory for it and store the pointer
+    if (type == FLOAT) {
+        int *float_ptr = malloc(sizeof(int));
+        if (float_ptr == NULL) {
+            printf("Error allocating memory for value\n");
+            return;
+        }
+        // atoi() converts a string to an int
+        *float_ptr = atoi(value);
+        value_to_insert = float_ptr;
+    }
+
     // If the value is a bool, alloc memory for it and store the pointer
     if (type == BOOL) {
         bool *bool_ptr = malloc(sizeof(bool));
@@ -253,16 +266,15 @@ void print_search(const hashtable *table, const char *key) {
         print_value(result);
 }
 
-void print_table(const hashtable *table) {
-    printf("=====================================\n");
-    printf("HASHTABLE CONTENTS\n");
-
+void print_table(const hashtable *table, const char *key) {
+    printf("HASHTABLE START ====================\n");
+    printf("%s\n", key);
     for (int i = 0; i < table->size; i++) {
         if (table->items[i]) {
             print_value(table->items[i]);
         }
     }
-    printf("=====================================\n");
+    printf("END TABLE ====================\n");
 }
 
 void print_value(const hashtable_item *item) {
@@ -282,11 +294,11 @@ void print_value(const hashtable_item *item) {
             printf("%s", *(bool*)item->value ? "true" : "false");
             break;
         case HASHTABLE:
-            printf("NESTED \n");
-            print_table(item->value);
+            printf("NESTED\n");
+            print_table(item->value,item->key);
             break;
         default:
-            printf("Invalid type\n");
+            printf("Invalid type");
     }
     printf("\n");
 }
