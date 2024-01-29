@@ -5,12 +5,13 @@
 #include "toolbox.h"
 
 hashtable* parseJSON(const char *jsonString) {
-    printf("Now parsing JSON : %s\n | NEST : ", jsonString);
     void *kvpArray[MAX_KVP];
-    int index = 1;
-    int start = 1;
+    int index = 0;
+    int start = 0;
     int count = 0;
     int nestingLevel = 0;
+
+    printf("Now parsing JSON : %s\n", jsonString);
 
     // Checks if JSON is malformed
     if (jsonString[0] != '{' || jsonString[strlen(jsonString) - 1] != '}') {
@@ -29,13 +30,9 @@ hashtable* parseJSON(const char *jsonString) {
             nestingLevel--;
             if (nestingLevel == 0) {
                 // End of the current object
-                char *kvp = strndup(jsonString + start, index - start + 1);
+                char *kvp = strndup(jsonString + start, index - start);
                 kvpArray[count++] = kvp;
                 start = index + 1;
-            }
-            const int innerJsonStartIndex = index;
-            while (jsonString[index] != '}') {
-                index++;
             }
         } else if (jsonString[index] == ',' && nestingLevel == 1) {
             // Split on commas only at the top level
@@ -49,7 +46,7 @@ hashtable* parseJSON(const char *jsonString) {
     hashtable *table = create_table();
 
     // Iterate over the kvpArray
-    for (int i = 0; i <= count; i++) {
+    for (int i = 0; i < count; i++) {
         // Finds the string index of the first occurrence of ':'
         // colon is not alloc new memory it points to the first occurence of the ':' in the string
         const char *colon = strchr(kvpArray[i], ':');
@@ -78,6 +75,12 @@ hashtable* parseJSON(const char *jsonString) {
         free(kvpArray[i]);
     }
     return table;
+}
+
+void cleanJSON(const char *jsonString) {
+    for (int i = 0; jsonString[i]; i++) {
+
+    }
 }
 
 int getValueType(const char* value) {

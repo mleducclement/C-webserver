@@ -123,7 +123,7 @@ void startWebserver() {
 
             // Parse the JSON data
             hashtable* table = parseJSON(jsonData);
-            print_table(table);
+            print_table(table, "JSON");
             free_table(table);
         }
 

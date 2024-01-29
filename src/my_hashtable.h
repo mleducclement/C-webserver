@@ -39,7 +39,7 @@ void hashtable_insert(hashtable *table, const char *key, void *value, ValueType 
 void insert_into_table(hashtable *table, hashtable_item *item);
 void hashtable_delete(hashtable *table, const char *key);
 hashtable_item* hashtable_search(const hashtable *table, const char *key);
-void print_table(const hashtable *table);
+void print_table(const hashtable *table, const char *key);
 void print_value(const hashtable_item *item);
 void print_search(const hashtable *table, const char *key);
 
