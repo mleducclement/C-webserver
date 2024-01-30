@@ -5,38 +5,43 @@
 #include "toolbox.h"
 
 hashtable* parseJSON(const char *jsonString) {
+    char *cleanedJSON = cleanJSON(jsonString);
     void *kvpArray[MAX_KVP];
     int index = 0;
     int start = 0;
     int count = 0;
     int nestingLevel = 0;
 
-    printf("Now parsing JSON : %s\n", jsonString);
+    if (cleanedJSON == NULL) {
+        printf("Error cleaning JSON\n");
+        return NULL;
+    }
+    printf("Now parsing JSON : %s\n", cleanedJSON);
 
     // Checks if JSON is malformed
-    if (jsonString[0] != '{' || jsonString[strlen(jsonString) - 1] != '}') {
-        printf("Malformed JSON input : %s\n", jsonString);
+    if (cleanedJSON[0] != '{' || cleanedJSON[strlen(cleanedJSON) - 1] != '}') {
+        printf("Malformed JSON input : %s\n", cleanedJSON);
         return NULL;
     }
 
     // Iterate over the entire JSON string
-    while (jsonString[index] != '\0' && count < MAX_KVP) {
-        if (jsonString[index] == '{') {
+    while (cleanedJSON[index] != '\0' && count < MAX_KVP) {
+        if (cleanedJSON[index] == '{') {
             nestingLevel++;
             if (nestingLevel == 1) {
-                start = index;    // Start a new object
+                start = index + 1;    // Start a new object
             }
-        } else if (jsonString[index] == '}') {
+        } else if (cleanedJSON[index] == '}') {
             nestingLevel--;
             if (nestingLevel == 0) {
                 // End of the current object
-                char *kvp = strndup(jsonString + start, index - start);
+                char *kvp = strndup(cleanedJSON + start, index - start);
                 kvpArray[count++] = kvp;
                 start = index + 1;
             }
-        } else if (jsonString[index] == ',' && nestingLevel == 1) {
+        } else if (cleanedJSON[index] == ',' && nestingLevel == 1) {
             // Split on commas only at the top level
-            char *kvp = strndup(jsonString + start, index - start);
+            char *kvp = strndup(cleanedJSON + start, index - start);
             kvpArray[count++] = kvp;
             start = index + 1;
         }
@@ -77,10 +82,26 @@ hashtable* parseJSON(const char *jsonString) {
     return table;
 }
 
-void cleanJSON(const char *jsonString) {
-    for (int i = 0; jsonString[i]; i++) {
+char* cleanJSON(const char *string) {
+    if (string == NULL) return NULL;
+    const int length = strlen(string);
+    char *output = malloc(length + 1);
 
+    if (output == NULL) {
+        printf("Error allocating memory for output\n");
+        free(output);
+        return NULL;
     }
+
+    int j = 0;
+    for (int i = 0; i < length; ++i) {
+        if (!isspace((unsigned char)string[i])) {
+            output[j++] = string[i];
+        }
+    }
+    output[j] = '\0';
+
+    return output;
 }
 
 int getValueType(const char* value) {

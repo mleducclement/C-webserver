@@ -13,6 +13,7 @@
 #include "my_hashtable.h"
 
 hashtable* parseJSON(const char *jsonString);
+char* cleanJSON(const char *jsonString);
 int getValueType(const char *value);
 void toLowerCase(char *str);
 

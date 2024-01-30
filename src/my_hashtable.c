@@ -127,13 +127,13 @@ void hashtable_insert(hashtable *table, const char *key, void *value, const Valu
     // TODO : doesn't work for some reason, getting 0.000000 in hashtable
     // If the value is a int, alloc memory for it and store the pointer
     if (type == FLOAT) {
-        int *float_ptr = malloc(sizeof(int));
+        float *float_ptr = malloc(sizeof(float));
         if (float_ptr == NULL) {
             printf("Error allocating memory for value\n");
             return;
         }
         // atoi() converts a string to an int
-        *float_ptr = atoi(value);
+        *float_ptr = atof(value);
         value_to_insert = float_ptr;
     }
 
@@ -288,7 +288,7 @@ void print_value(const hashtable_item *item) {
             printf("%d", *(int*)item->value);
             break;
         case FLOAT:
-            printf("%f", *(float*)item->value);
+            printf("%8.2f", *(float*)item->value);
             break;
         case BOOL:
             printf("%s", *(bool*)item->value ? "true" : "false");
